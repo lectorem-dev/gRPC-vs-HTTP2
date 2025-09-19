@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    // ❌ НЕ подключаем spring-boot здесь!
+    // ❌ НЕ подключаем io.spring.dependency-management
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}
+
+// вместо bootJar → обычный jar
+tasks.named('bootJar') {
+    enabled = false
+}
+
+tasks.named('jar') {
+    enabled = true
+}

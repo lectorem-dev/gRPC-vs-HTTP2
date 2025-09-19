@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="cat.libs" target="17" />
+      <module name="cat.libs.main" target="17" />
+      <module name="cat.libs.test" target="17" />
+      <module name="cat.receiver" target="17" />
+      <module name="cat.receiver.main" target="17" />
+      <module name="cat.receiver.test" target="17" />
+      <module name="cat.sender" target="17" />
+      <module name="cat.sender.main" target="17" />
+      <module name="cat.sender.test" target="17" />
+      <module name="gRPC-vs-HTTP2.libs" target="17" />
+      <module name="gRPC-vs-HTTP2.libs.main" target="17" />
+      <module name="gRPC-vs-HTTP2.libs.test" target="17" />
+      <module name="gRPC-vs-HTTP2.receiver" target="17" />
+      <module name="gRPC-vs-HTTP2.receiver.main" target="17" />
+      <module name="gRPC-vs-HTTP2.sender" target="17" />
+      <module name="gRPC-vs-HTTP2.sender.main" target="17" />
+      <module name="gRPC-vs-HTTP2.sender.test" target="17" />
+      <module name="receiver.test" target="17" />
+      <module name="ru.ya.cat.libs" target="17" />
+      <module name="ru.ya.cat.libs.main" target="17" />
+      <module name="ru.ya.cat.libs.test" target="17" />
+      <module name="ru.ya.cat.receiver" target="17" />
+      <module name="ru.ya.cat.receiver.main" target="17" />
+      <module name="ru.ya.cat.receiver.test" target="17" />
+      <module name="ru.ya.cat.sender" target="17" />
+      <module name="ru.ya.cat.sender.main" target="17" />
+      <module name="ru.ya.cat.sender.test" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="cat.libs" options="-parameters" />
+      <module name="cat.libs.main" options="-parameters" />
+      <module name="cat.libs.test" options="-parameters" />
+      <module name="cat.receiver" options="-parameters" />
+      <module name="cat.receiver.main" options="-parameters" />
+      <module name="cat.receiver.test" options="-parameters" />
+      <module name="cat.sender" options="-parameters" />
+      <module name="cat.sender.main" options="-parameters" />
+      <module name="cat.sender.test" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.receiver" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.receiver.main" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.receiver.test" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.sender" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.sender.main" options="-parameters" />
+      <module name="gRPC-vs-HTTP2.sender.test" options="-parameters" />
+      <module name="grpc-vs-http2.libs" options="-parameters" />
+      <module name="grpc-vs-http2.libs.main" options="-parameters" />
+      <module name="grpc-vs-http2.libs.test" options="-parameters" />
+      <module name="grpc-vs-http2.receiver" options="-parameters" />
+      <module name="grpc-vs-http2.receiver.main" options="-parameters" />
+      <module name="grpc-vs-http2.receiver.test" options="-parameters" />
+      <module name="grpc-vs-http2.sender" options="-parameters" />
+      <module name="grpc-vs-http2.sender.main" options="-parameters" />
+      <module name="grpc-vs-http2.sender.test" options="-parameters" />
+      <module name="receiver" options="-parameters" />
+      <module name="receiver.main" options="-parameters" />
+      <module name="receiver.test" options="-parameters" />
+      <module name="ru.ya.cat.libs" options="-parameters" />
+      <module name="ru.ya.cat.libs.main" options="-parameters" />
+      <module name="ru.ya.cat.libs.test" options="-parameters" />
+      <module name="ru.ya.cat.receiver" options="-parameters" />
+      <module name="ru.ya.cat.receiver.main" options="-parameters" />
+      <module name="ru.ya.cat.receiver.test" options="-parameters" />
+      <module name="ru.ya.cat.sender" options="-parameters" />
+      <module name="ru.ya.cat.sender.main" options="-parameters" />
+      <module name="ru.ya.cat.sender.test" options="-parameters" />
+      <module name="sender" options="-parameters" />
+      <module name="sender.main" options="-parameters" />
+      <module name="sender.test" options="-parameters" />
+    </option>
+  </component>
+</project>
