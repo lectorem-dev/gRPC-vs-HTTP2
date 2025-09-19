@@ -17,7 +17,10 @@ import ru.ya.receiver.service.FleasService;
 public class FleasControllerHTTP2 {
     private final FleasService fleasService;
 
-    @PostMapping(value = "/sum", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/sum",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
     public Mono<Long> calculateFleasSum(@RequestBody Mono<FleasProblemDto> problemMono) {
         return problemMono.map(fleasService::calculateMinimalPathSum);
     }
