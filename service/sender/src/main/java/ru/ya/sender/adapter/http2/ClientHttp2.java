@@ -2,13 +2,9 @@ package ru.ya.sender.adapter.http2;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
+import ru.ya.libs.FleasAnswerDto;
 import ru.ya.libs.FleasProblemDto;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
-
 
 @Component
 public class ClientHttp2 {
@@ -20,17 +16,11 @@ public class ClientHttp2 {
                 .build();
     }
 
-    public Mono<Long> sendProblems(List<FleasProblemDto> problems) {
-        Instant start = Instant.now();
-
-        return Mono.when(
-                problems.stream()
-                        .map(problem -> webClient.post()
-                                .uri("/fleas/sum")
-                                .bodyValue(problem)
-                                .retrieve()
-                                .bodyToMono(Long.class))
-                        .toList()
-        ).then(Mono.fromCallable(() -> Duration.between(start, Instant.now()).toMillis()));
+    public Flux<FleasAnswerDto> sendProblems(Flux<FleasProblemDto> problems) {
+        return webClient.post()
+                .uri("/fleas/sum")
+                .body(problems, FleasProblemDto.class)
+                .retrieve()
+                .bodyToFlux(FleasAnswerDto.class);
     }
 }
