@@ -7,3 +7,8 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+}
