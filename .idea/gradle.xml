@@ -3,13 +3,39 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="/libs" />
+            <option value="/receiver" />
+            <option value="/sender" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+      <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/libs" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/libs" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/receiver" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/receiver" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/sender" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/sender" />
+          </set>
+        </option>
       </GradleProjectSettings>
     </option>
   </component>
