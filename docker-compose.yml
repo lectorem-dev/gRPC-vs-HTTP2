@@ -1,0 +1,16 @@
+services:
+  receiver:
+    build:
+      context: ./service/receiver
+    container_name: receiver
+    ports:
+      - "8080:8080"
+
+  sender:
+    build:
+      context: ./service/sender
+    container_name: sender
+    ports:
+      - "8000:8080"
+    depends_on:
+      - receiver
