@@ -12,5 +12,6 @@ public class FleasProblemDto {
     private int m; // число столбцов доски
     private int feederRow; // строка кормушки, 0-индексация
     private int feederCol; // столбец кормушки, 0-индексация
+    private int fleasCount; // Количество блох
     private List<FleaPositionDto> fleas; // список блох
 }

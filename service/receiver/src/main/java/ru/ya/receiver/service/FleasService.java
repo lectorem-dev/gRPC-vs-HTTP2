@@ -12,97 +12,69 @@ import java.util.Queue;
 @Service
 public class FleasService {
 
-    // ход коня
-    private static final int[][] MOVES = {
-            {1, 2}, {2, 1}, {2, -1}, {1, -2},
-            {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}
-    };
+    public FleasAnswerDto calculateMinimalPathSum(FleasProblemDto fleasProblemDto) {
+        long start = System.currentTimeMillis();
 
-    /**
-     * Решает задачу для одного FleasProblemDto и возвращает ответ + время (ms).
-     * Входные координаты ожидаются в 1-based (как в условии). Метод внутри переводит в 0-based.
-     */
-    public FleasAnswerDto calculateMinimalPathSum(FleasProblemDto problem) {
-        long startNano = System.nanoTime();
+        int N = fleasProblemDto.getN(); // размеры доски
+        int M = fleasProblemDto.getM();
+        int S = fleasProblemDto.getFeederRow(); // номер строки кормушки, 0-индексация
+        int T = fleasProblemDto.getFeederCol(); // номер столбца кормушки, 0-индексация
+        int Q = fleasProblemDto.getFleasCount(); // количество блох на доске
 
-        // базовые проверки
-        if (problem == null) {
-            return buildAnswer(-1, System.nanoTime() - startNano);
+        // Шахматная доска
+        int[][] chessboard = new int[N][M];
+        for (int[] row : chessboard) Arrays.fill(row, -1);
+
+        // Q строк по два числа — координаты каждой блохи
+        int[][] fleas = new int[fleasProblemDto.getFleasCount()][2];
+
+        for (int i = 0; i < fleasProblemDto.getFleasCount(); i++) {
+            FleaPositionDto flea = fleasProblemDto.getFleas().get(i);
+            fleas[i][0] = flea.getRow(); // строка (x)
+            fleas[i][1] = flea.getCol(); // колонка (y)
         }
-        int n = problem.getN();
-        int m = problem.getM();
-
-        if (n <= 0 || m <= 0) {
-            return buildAnswer(-1, System.nanoTime() - startNano);
-        }
-
-        // переводим кормушку из 1-based в 0-based (если вход в 0-based — убери -1)
-        int feederRow = problem.getFeederRow() - 1;
-        int feederCol = problem.getFeederCol() - 1;
-
-        if (!inBounds(feederRow, feederCol, n, m)) {
-            return buildAnswer(-1, System.nanoTime() - startNano);
-        }
-
-        // готовим поле
-        int[][] board = new int[n][m];
-        for (int[] row : board) Arrays.fill(row, -1);
-
-        Queue<int[]> queue = new ArrayDeque<>();
-        queue.add(new int[]{feederRow, feederCol});
-        board[feederRow][feederCol] = 0;
 
         // BFS от кормушки
+        Queue<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[]{S, T});
+        chessboard[S][T] = 0;
+
+        // Блохи по сути кони идущие к водопою
+        int[][] moves = {{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
+
         while (!queue.isEmpty()) {
             int[] cur = queue.poll();
             int x = cur[0], y = cur[1];
-            for (int[] move : MOVES) {
-                int nx = x + move[0];
-                int ny = y + move[1];
-                if (inBounds(nx, ny, n, m) && board[nx][ny] == -1) {
-                    board[nx][ny] = board[x][y] + 1;
+
+            for (int[] m : moves) {
+                int nx = x + m[0];
+                int ny = y + m[1];
+
+                if (nx >= 0 && nx < N && ny >= 0 && ny < M && chessboard[nx][ny] == -1) {
+                    chessboard[nx][ny] = chessboard[x][y] + 1;
                     queue.add(new int[]{nx, ny});
                 }
             }
         }
 
-        long sum = 0;
-        if (problem.getFleas() != null) {
-            for (FleaPositionDto flea : problem.getFleas()) {
-                if (flea == null) {
-                    return buildAnswer(-1, System.nanoTime() - startNano);
-                }
-                // перевод позиции блохи в 0-based
-                int fx = flea.getRow() - 1;
-                int fy = flea.getCol() - 1;
-                if (!inBounds(fx, fy, n, m)) {
-                    // некорректная координата — считаем как невозможность достичь
-                    return buildAnswer(-1, System.nanoTime() - startNano);
-                }
-                if (board[fx][fy] == -1) {
-                    // блоха не может добраться
-                    return buildAnswer(-1, System.nanoTime() - startNano);
-                }
-                sum += board[fx][fy];
+        long result = 0;
+        boolean possible = true;
+
+        for (int i = 0; i < Q; i++) {
+            int fx = fleas[i][0];
+            int fy = fleas[i][1];
+
+            if (chessboard[fx][fy] == -1) {
+                possible = false;
+                break;
+            } else {
+                result += chessboard[fx][fy];
             }
         }
 
-        long durationMs = (System.nanoTime() - startNano) / 1_000_000;
         return FleasAnswerDto.builder()
-                .result(sum)
-                .durationMs(durationMs)
-                .build();
-    }
-
-    private boolean inBounds(int x, int y, int n, int m) {
-        return x >= 0 && x < n && y >= 0 && y < m;
-    }
-
-    private FleasAnswerDto buildAnswer(long result, long elapsedNano) {
-        long durationMs = elapsedNano / 1_000_000;
-        return FleasAnswerDto.builder()
-                .result(result)
-                .durationMs(durationMs)
+                .result(possible ? result : -1)
+                .durationMs(System.currentTimeMillis() - start)
                 .build();
     }
 }
