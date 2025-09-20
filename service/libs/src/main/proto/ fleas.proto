@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package ru.ya.libs;
+package ru.ya.libs; // ./gradlew :libs:build
 
 option java_package = "ru.ya.libs.grpc";
 option java_multiple_files = true;
@@ -14,19 +14,29 @@ message FleaPosition {
 message FleasProblem {
   int32 n = 1;
   int32 m = 2;
-  int32 feederRow = 3;
-  int32 feederCol = 4;
-  int32 fleasCount = 5;
+
+  int32 feeder_row = 3 [json_name = "feederRow"]; // задаём красивый java/json стиль
+  int32 feeder_col = 4 [json_name = "feederCol"];
+  int32 fleas_count = 5 [json_name = "fleasCount"];
   repeated FleaPosition fleas = 6;
 }
 
-// DTO для ответа
+// старый ответ
 message FleasAnswer {
   int64 result = 1;
-  int64 durationMs = 2;
+  int64 duration_ms = 2 [json_name = "durationMs"];
+}
+
+// новый ответ с метриками
+message FleasAnswerWithMetrics {
+  FleasAnswer answer = 1;
+  int64 serialization_time_ns = 2 [json_name = "serializationTimeNs"];
+  int64 deserialization_time_ns = 3 [json_name = "deserializationTimeNs"];
+  int64 network_time_ns = 4 [json_name = "networkTimeNs"];
+  int64 total_time_ns = 5 [json_name = "totalTimeNs"];
 }
 
 // gRPC сервис
-service FleasServiceGrpc {
-  rpc Calculate (stream FleasProblem) returns (stream FleasAnswer);
+service FleasService {
+  rpc Calculate (stream FleasProblem) returns (stream FleasAnswerWithMetrics);
 }

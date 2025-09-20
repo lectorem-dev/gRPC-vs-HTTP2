@@ -3,48 +3,65 @@ package ru.ya.sender.adapter.grpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 import ru.ya.libs.FleasAnswerDto;
+import ru.ya.libs.FleasAnswerWithMetricsDto;
 import ru.ya.libs.FleasProblemDto;
-import ru.ya.libs.grpc.FleaPosition;
-import ru.ya.libs.grpc.FleasAnswer;
-import ru.ya.libs.grpc.FleasProblem;
-import ru.ya.libs.grpc.FleasServiceGrpcGrpc;
+import ru.ya.libs.grpc.*;
 
 @Component
 public class ClientGRPC {
+    private static final Logger log = LoggerFactory.getLogger(ClientGRPC.class);
 
-    private final FleasServiceGrpcGrpc.FleasServiceGrpcStub asyncStub;
+    private final FleasServiceGrpc.FleasServiceStub asyncStub;
 
     public ClientGRPC() {
         ManagedChannel channel = ManagedChannelBuilder.forAddress("receiver", 9090)
                 .usePlaintext()
                 .build();
-        this.asyncStub = FleasServiceGrpcGrpc.newStub(channel);
+        this.asyncStub = FleasServiceGrpc.newStub(channel);
     }
 
-    public Flux<FleasAnswerDto> sendProblems(Flux<FleasProblemDto> problems) {
+    public Flux<FleasAnswerWithMetricsDto> sendProblems(Flux<FleasProblemDto> problems) {
+        long startTotal = System.nanoTime();
+
         return Flux.create(sink -> {
-            StreamObserver<FleasAnswer> responseObserver = new StreamObserver<>() {
+            StreamObserver<FleasAnswerWithMetrics> responseObserver = new StreamObserver<>() {
                 @Override
-                public void onNext(FleasAnswer value) {
-                    sink.next(
-                            FleasAnswerDto.builder()
-                                    .result(value.getResult())
-                                    .durationMs(value.getDurationMs())
-                                    .build()
-                    );
+                public void onNext(FleasAnswerWithMetrics value) {
+                    long totalTime = System.nanoTime() - startTotal;
+                    long networkTime = totalTime - value.getSerializationTimeNs() - value.getDeserializationTimeNs();
+
+                    log.info("Получен ответ: result={}, durationMs={}",
+                            value.getAnswer().getResult(), value.getAnswer().getDurationMs());
+                    log.info("Metrics: serialization={} ns, deserialization={} ns, network={} ns, total={} ns",
+                            value.getSerializationTimeNs(), value.getDeserializationTimeNs(), networkTime, totalTime);
+
+                    sink.next(FleasAnswerWithMetricsDto.builder()
+                            .answer(FleasAnswerDto.builder()
+                                    .result(value.getAnswer().getResult())
+                                    .durationMs(value.getAnswer().getDurationMs())
+                                    .build())
+                            .serializationTimeNs(value.getSerializationTimeNs())
+                            .deserializationTimeNs(value.getDeserializationTimeNs())
+                            .networkTimeNs(networkTime)
+                            .totalTimeNs(totalTime)
+                            .build());
                 }
 
                 @Override
                 public void onError(Throwable t) {
+                    log.error("Ошибка gRPC: {}", t.getMessage(), t);
                     sink.error(t);
                 }
 
                 @Override
                 public void onCompleted() {
+                    log.info("gRPC поток завершён");
                     sink.complete();
                 }
             };
@@ -52,12 +69,14 @@ public class ClientGRPC {
             StreamObserver<FleasProblem> requestObserver = asyncStub.calculate(responseObserver);
 
             problems.subscribe(dto -> {
+                long serializationStart = System.nanoTime();
+
                 FleasProblem problem = FleasProblem.newBuilder()
                         .setN(dto.getN())
                         .setM(dto.getM())
                         .setFeederRow(dto.getFeederRow())
                         .setFeederCol(dto.getFeederCol())
-                        .setFleasCount5(dto.getFleasCount())
+                        .setFleasCount5(dto.getFleasCount()) // без цифр
                         .addAllFleas6(dto.getFleas().stream()
                                 .map(f -> FleaPosition.newBuilder()
                                         .setRow(f.getRow())
@@ -65,6 +84,9 @@ public class ClientGRPC {
                                         .build())
                                 .toList())
                         .build();
+
+                long serializationTime = System.nanoTime() - serializationStart;
+                log.info("Serialization time для задачи: {} ns", serializationTime);
                 requestObserver.onNext(problem);
             }, sink::error, requestObserver::onCompleted);
         }, FluxSink.OverflowStrategy.BUFFER);

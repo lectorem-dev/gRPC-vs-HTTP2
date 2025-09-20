@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
-import ru.ya.libs.FleasAnswerDto;
+import ru.ya.libs.FleasAnswerWithMetricsDto;
 import ru.ya.libs.FleasProblemDto;
 import ru.ya.sender.adapter.grpc.ClientGRPC;
 import ru.ya.sender.adapter.http2.ClientHttp2;
@@ -20,16 +20,26 @@ public class SenderController {
     private final ClientGRPC clientGrpc;
 
     @PostMapping("/send")
-    public Flux<FleasAnswerDto> sendProblems(
-            @RequestParam(defaultValue = "http") String protocol, // <-- выбор протокола
+    public Flux<FleasAnswerWithMetricsDto> sendProblems(
+            @RequestParam(defaultValue = "http") String protocol,
             @RequestBody Flux<FleasProblemDto> problems) {
+
+        long startTime = System.nanoTime(); // начало измерения
+
+        Flux<FleasAnswerWithMetricsDto> responseFlux;
 
         if ("grpc".equalsIgnoreCase(protocol)) {
             log.info("Protocol selected: gRPC");
-            return clientGrpc.sendProblems(problems);
+            responseFlux = clientGrpc.sendProblems(problems);
         } else {
             log.info("Protocol selected: HTTP2");
-            return clientHttp2.sendProblems(problems);
+            responseFlux = clientHttp2.sendProblems(problems);
         }
+
+        return responseFlux.map(dto -> {
+            long totalTimeNs = System.nanoTime() - startTime;
+            dto.setTotalTimeNs(totalTimeNs); // добавляем totalTimeNs
+            return dto;
+        });
     }
 }
