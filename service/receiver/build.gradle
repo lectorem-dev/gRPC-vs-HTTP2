@@ -7,6 +7,12 @@ plugins {
 dependencies {
     implementation project(':libs')
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // gRPC сервер (заменяем lognet)
+    implementation "net.devh:grpc-server-spring-boot-starter:3.1.0.RELEASE"
+    // gRPC клиент (если нужен)
+    implementation "net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE"
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 }

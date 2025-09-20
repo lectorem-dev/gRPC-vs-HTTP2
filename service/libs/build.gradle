@@ -1,25 +1,52 @@
 plugins {
     id 'java'
-    // ❌ НЕ подключаем spring-boot здесь!
-    // ❌ НЕ подключаем io.spring.dependency-management
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    id 'com.google.protobuf' version '0.9.5'
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.32'
-    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    // Lombok для твоих DTO
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Protobuf / gRPC runtime
+    implementation 'com.google.protobuf:protobuf-java:3.24.3'
+    implementation 'io.grpc:grpc-netty-shaded:1.56.0'
+    implementation 'io.grpc:grpc-protobuf:1.56.0'
+    implementation 'io.grpc:grpc-stub:1.56.0'
+
+    // для @javax.annotation.Generated
+    compileOnly 'javax.annotation:javax.annotation-api:1.3.2'
 }
 
-// вместо bootJar → обычный jar
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.24.3"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:1.56.0"
+        }
+    }
+    generateProtoTasks {
+        all().each { task ->
+            task.plugins {
+                grpc {}
+            }
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            // включаем сгенерированные proto классы
+            srcDirs 'build/generated/source/proto/main/java',
+                    'build/generated/source/proto/main/grpc'
+        }
+    }
+}
+
+// Отключаем сборку чтобы он не искал Main class
 tasks.named('bootJar') {
     enabled = false
-}
-
-tasks.named('jar') {
-    enabled = true
 }

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ru.ya.libs;
+
+option java_package = "ru.ya.libs.grpc";
+option java_multiple_files = true;
+
+// DTO для запроса
+message FleaPosition {
+  int32 row = 1;
+  int32 col = 2;
+}
+
+message FleasProblem {
+  int32 n = 1;
+  int32 m = 2;
+  int32 feederRow = 3;
+  int32 feederCol = 4;
+  int32 fleasCount = 5;
+  repeated FleaPosition fleas = 6;
+}
+
+// DTO для ответа
+message FleasAnswer {
+  int64 result = 1;
+  int64 durationMs = 2;
+}
+
+// gRPC сервис
+service FleasServiceGrpc {
+  rpc Calculate (stream FleasProblem) returns (stream FleasAnswer);
+}
