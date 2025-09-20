@@ -56,6 +56,8 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
 
                 FleasAnswerDto answerDto = fleasService.calculateMinimalPathSum(dto);
 
+                long serializationStart = System.nanoTime();
+
                 FleasAnswer answer = FleasAnswer.newBuilder()
                         .setResult(answerDto.getResult())
                         .setDurationMs(answerDto.getDurationMs())
@@ -64,6 +66,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
                 FleasAnswerWithMetrics answerWithMetrics = FleasAnswerWithMetrics.newBuilder()
                         .setAnswer(answer)
                         .setDeserializationTimeNs(deserializationTime)
+                        .setSerializationTimeNs(System.nanoTime() - serializationStart)
                         .build();
 
                 log.info("Отправляем ответ: result={}, durationMs={}", answer.getResult(), answer.getDurationMs());
