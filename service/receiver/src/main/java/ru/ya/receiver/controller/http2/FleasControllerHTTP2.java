@@ -27,8 +27,8 @@ public class FleasControllerHTTP2 {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public Flux<FleasAnswerWithMetricsDto> calculateFleasSum(
-            @RequestBody Flux<FleasProblemDto> problems) {
+    public Flux<FleasAnswerWithMetricsDto> calculateFleasSum(@RequestBody Flux<FleasProblemDto> problems) {
+        log.info("Получен поток задач через HTTP2");
 
         return problems.flatMap(problem -> {
             long deserializationStart = System.nanoTime();
