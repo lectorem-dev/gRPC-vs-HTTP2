@@ -13,7 +13,7 @@ import java.util.Queue;
 public class FleasService {
 
     public FleasAnswerDto calculateMinimalPathSum(FleasProblemDto fleasProblemDto) {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         int N = fleasProblemDto.getN(); // размеры доски
         int M = fleasProblemDto.getM();
@@ -74,7 +74,7 @@ public class FleasService {
 
         return FleasAnswerDto.builder()
                 .result(possible ? result : -1)
-                .durationMs(System.currentTimeMillis() - start)
+                .durationNs(System.nanoTime() - start)
                 .build();
     }
 }

@@ -37,14 +37,14 @@ public class ClientGRPC {
                     long networkTime = totalTime - value.getSerializationTimeNs() - value.getDeserializationTimeNs();
 
                     log.info("Получен ответ: result={}, durationMs={}",
-                            value.getAnswer().getResult(), value.getAnswer().getDurationMs());
+                            value.getAnswer().getResult(), value.getAnswer().getDurationNs());
                     log.info("Metrics: serialization={} ns, deserialization={} ns, network={} ns, total={} ns",
                             value.getSerializationTimeNs(), value.getDeserializationTimeNs(), networkTime, totalTime);
 
                     sink.next(FleasAnswerWithMetricsDto.builder()
                             .answer(FleasAnswerDto.builder()
                                     .result(value.getAnswer().getResult())
-                                    .durationMs(value.getAnswer().getDurationMs())
+                                    .durationNs(value.getAnswer().getDurationNs())
                                     .build())
                             .serializationTimeNs(value.getSerializationTimeNs())
                             .deserializationTimeNs(value.getDeserializationTimeNs())
@@ -68,6 +68,7 @@ public class ClientGRPC {
 
             StreamObserver<FleasProblem> requestObserver = asyncStub.calculate(responseObserver);
 
+            // TODO: не мешает ли это честным испытаниям?
             problems.subscribe(dto -> {
                 long serializationStart = System.nanoTime();
 

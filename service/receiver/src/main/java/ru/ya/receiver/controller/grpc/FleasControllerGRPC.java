@@ -60,7 +60,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
 
                 FleasAnswer answer = FleasAnswer.newBuilder()
                         .setResult(answerDto.getResult())
-                        .setDurationMs(answerDto.getDurationMs())
+                        .setDurationNs(answerDto.getDurationNs())
                         .build();
 
                 FleasAnswerWithMetrics answerWithMetrics = FleasAnswerWithMetrics.newBuilder()
@@ -69,7 +69,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
                         .setSerializationTimeNs(System.nanoTime() - serializationStart)
                         .build();
 
-                log.info("Отправляем ответ: result={}, durationMs={}", answer.getResult(), answer.getDurationMs());
+                log.info("Отправляем ответ: result={}, durationMs={}", answer.getResult(), answer.getDurationNs());
 
                 responseObserver.onNext(answerWithMetrics);
             }

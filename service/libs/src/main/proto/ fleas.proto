@@ -24,7 +24,7 @@ message FleasProblem {
 // старый ответ
 message FleasAnswer {
   int64 result = 1;
-  int64 duration_ms = 2 [json_name = "durationMs"];
+  int64 duration_ns = 2 [json_name = "durationNs"];
 }
 
 // новый ответ с метриками
