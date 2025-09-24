@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Main {
     // CONFIGURE
-    private static final String SENDER_URL = "http://192.168.137.175:8000/api/sender/send?protocol=grpc";
+    private static final String SENDER_URL = "http://localhost:8000/api/sender/send?protocol=grpc";
     private static final String REQUEST_JSON = """
             [
               {
