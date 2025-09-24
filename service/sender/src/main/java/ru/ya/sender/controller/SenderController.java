@@ -29,10 +29,10 @@ public class SenderController {
         Flux<FleasAnswerWithMetricsDto> responseFlux;
 
         if ("grpc".equalsIgnoreCase(protocol)) {
-            log.info("Protocol selected: gRPC");
+            log.debug("Protocol selected: gRPC");
             responseFlux = clientGrpc.sendProblems(problems);
         } else {
-            log.info("Protocol selected: HTTP2");
+            log.debug("Protocol selected: HTTP2");
             responseFlux = clientHttp2.sendProblems(problems);
         }
 

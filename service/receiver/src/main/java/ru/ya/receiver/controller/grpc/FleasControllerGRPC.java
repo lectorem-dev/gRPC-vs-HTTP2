@@ -27,12 +27,12 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
 
     @Override
     public StreamObserver<FleasProblem> calculate(StreamObserver<FleasAnswerWithMetrics> responseObserver) {
-        log.info("gRPC StreamObserver создан: получаем задачи через gRPC");
+        log.debug("gRPC StreamObserver создан: получаем задачи через gRPC");
 
         return new StreamObserver<>() {
             @Override
             public void onNext(FleasProblem fleasProblem) {
-                log.info("Получена задача: n={}, m={}, fleasCount={}", fleasProblem.getN(),
+                log.debug("Получена задача: n={}, m={}, fleasCount={}", fleasProblem.getN(),
                         fleasProblem.getM(), fleasProblem.getFleas6Count());
 
                 long deserializationStart = System.nanoTime();
@@ -52,7 +52,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
                         .build();
 
                 long deserializationTime = System.nanoTime() - deserializationStart;
-                log.info("Deserialization time: {} ns", deserializationTime);
+                log.debug("Deserialization time: {} ns", deserializationTime);
 
                 FleasAnswerDto answerDto = fleasService.calculateMinimalPathSum(dto);
 
@@ -69,7 +69,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
                         .setSerializationTimeNs(System.nanoTime() - serializationStart)
                         .build();
 
-                log.info("Отправляем ответ: result={}, durationMs={}", answer.getResult(), answer.getDurationNs());
+                log.debug("Отправляем ответ: result={}, durationMs={}", answer.getResult(), answer.getDurationNs());
 
                 responseObserver.onNext(answerWithMetrics);
             }
@@ -82,7 +82,7 @@ public class FleasControllerGRPC extends FleasServiceGrpc.FleasServiceImplBase {
 
             @Override
             public void onCompleted() {
-                log.info("gRPC поток завершён");
+                log.debug("gRPC поток завершён");
                 responseObserver.onCompleted();
             }
         };

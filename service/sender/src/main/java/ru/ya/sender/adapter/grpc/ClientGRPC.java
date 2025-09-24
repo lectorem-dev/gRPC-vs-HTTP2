@@ -36,9 +36,9 @@ public class ClientGRPC {
                     long totalTime = System.nanoTime() - startTotal;
                     long networkTime = totalTime - value.getSerializationTimeNs() - value.getDeserializationTimeNs();
 
-                    log.info("Получен ответ: result={}, durationMs={}",
+                    log.debug("Получен ответ: result={}, durationMs={}",
                             value.getAnswer().getResult(), value.getAnswer().getDurationNs());
-                    log.info("Metrics: serialization={} ns, deserialization={} ns, network={} ns, total={} ns",
+                    log.debug("Metrics: serialization={} ns, deserialization={} ns, network={} ns, total={} ns",
                             value.getSerializationTimeNs(), value.getDeserializationTimeNs(), networkTime, totalTime);
 
                     sink.next(FleasAnswerWithMetricsDto.builder()
@@ -61,7 +61,7 @@ public class ClientGRPC {
 
                 @Override
                 public void onCompleted() {
-                    log.info("gRPC поток завершён");
+                    log.debug("gRPC поток завершён");
                     sink.complete();
                 }
             };
@@ -87,7 +87,7 @@ public class ClientGRPC {
                         .build();
 
                 long serializationTime = System.nanoTime() - serializationStart;
-                log.info("Serialization time для задачи: {} ns", serializationTime);
+                log.debug("Serialization time для задачи: {} ns", serializationTime);
                 requestObserver.onNext(problem);
             }, sink::error, requestObserver::onCompleted);
         }, FluxSink.OverflowStrategy.BUFFER);
