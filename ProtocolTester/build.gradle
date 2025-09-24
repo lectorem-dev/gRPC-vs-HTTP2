@@ -14,11 +14,6 @@ dependencies {
     // Jackson для JSON
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.0'
 }
-
-application {
-    mainClass = 'com.example.protocoltester.ProtocolTesterMultiRun'
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = 'UTF-8'
 }

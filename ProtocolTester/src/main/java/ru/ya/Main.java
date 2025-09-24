@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - each run does ITERATIONS requests using THREAD_COUNT threads
  * - prints per-run statistics and then averages across runs + aggregated statistics
  */
-public class ProtocolTesterMultiRun {
+public class Main {
     // CONFIGURE
-    private static final String SENDER_URL = "http://localhost:8000/api/sender/send?protocol=grpc";
+    private static final String SENDER_URL = "http://192.168.137.175:8000/api/sender/send?protocol=grpc";
     private static final String REQUEST_JSON = """
             [
               {
@@ -548,10 +548,10 @@ public class ProtocolTesterMultiRun {
             ]
             """;
 
-    private static final int RUNS = 5;            // number of full runs
+    private static final int RUNS = 1;            // number of full runs
 
-    private static final int ITERATIONS = 30;     // requests per run
-    private static final int THREAD_COUNT = 10;    // parallel threads per run
+    private static final int ITERATIONS = 20;     // requests per run
+    private static final int THREAD_COUNT = 5;    // parallel threads per run
 
     private static final int CONNECT_TIMEOUT_MS = 15_000;
     private static final int READ_TIMEOUT_MS = 60_000;
