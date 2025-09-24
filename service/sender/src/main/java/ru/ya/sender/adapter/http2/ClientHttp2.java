@@ -12,7 +12,7 @@ public class ClientHttp2 {
 
     public ClientHttp2() {
         this.webClient = WebClient.builder()
-                .baseUrl("http://receiver:8080/api") // прямо здесь указываем receiver
+                .baseUrl("http://localhost:8080/api") // прямо здесь указываем receiver
                 .build();
     }
 

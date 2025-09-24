@@ -20,7 +20,7 @@ public class ClientGRPC {
     private final FleasServiceGrpc.FleasServiceStub asyncStub;
 
     public ClientGRPC() {
-        ManagedChannel channel = ManagedChannelBuilder.forAddress("receiver", 9090)
+        ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 9090)
                 .usePlaintext()
                 .build();
         this.asyncStub = FleasServiceGrpc.newStub(channel);
