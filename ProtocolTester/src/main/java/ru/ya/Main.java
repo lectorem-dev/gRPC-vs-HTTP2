@@ -15,584 +15,56 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Multi-run protocol tester:
- * - performs RUNS runs
- * - each run does ITERATIONS requests using THREAD_COUNT threads
- * - prints per-run statistics and then averages across runs + aggregated statistics
+ * Многопроходный тестировщик протоколов HTTP/gRPC
+ * - выполняет RUNS прогонов
+ * - каждый прогон делает ITERATIONS запросов с THREAD_COUNT потоками
+ * - выводит прогресс выполнения в виде шкалы и сводные статистики
  */
 public class Main {
-    // CONFIGURE
-    private static final String SENDER_URL = "http://localhost:8000/api/sender/send?protocol=grpc";
-    private static final String REQUEST_JSON = """
-            [
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              },
-              {
-                "n": 4,
-                "m": 4,
-                "feederRow": 0,
-                "feederCol": 0,
-                "fleasCount": 16,
-                "fleas": [
-                  {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
-                  {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
-                  {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
-                  {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
-                ]
-              }
-            ]
-            """;
+    // URL отправителя
+    private static final String SENDER_URL = "http://localhost:8000/api/sender/send?protocol=";
 
-    private static final int RUNS = 1;            // number of full runs
-
-    private static final int ITERATIONS = 20;     // requests per run
-    private static final int THREAD_COUNT = 5;    // parallel threads per run
-
+    // ----- НАСТРОЙКИ -----
+    private static final String PROTOCOL = "grpc";       // grpc или http
+    private static final int RUNS = 2;                 // количество полных прогонов
+    private static final int ITERATIONS = 20;           // запросов на прогон
+    private static final int THREAD_COUNT = 5;          // потоков на прогон
     private static final int CONNECT_TIMEOUT_MS = 15_000;
     private static final int READ_TIMEOUT_MS = 60_000;
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("ProtocolTesterMultiRun");
-        System.out.println("Target: " + SENDER_URL);
-        System.out.println("Runs: " + RUNS + ", Iterations/run: " + ITERATIONS + ", Threads: " + THREAD_COUNT);
-        System.out.println();
+    // Настройка генерации JSON
+    private static final int REQUEST_BLOCK_COUNT = 2;   // сколько блоков "блох" в массиве
 
-        // ensure output dir exists (optional)
+    private static final String REQUEST_JSON = generateRequestJson(REQUEST_BLOCK_COUNT);
+
+    public static void main(String[] args) throws Exception {
+        long scriptStart = System.nanoTime();
+        printConfig();
+
+        // Создаём директорию для вывода (если нужно)
         try {
             Files.createDirectories(Paths.get("output"));
         } catch (Exception ignored) {}
 
-        // store per-run aggregated metrics
+        // Хранилище метрик всех прогонов
         List<Double> runAvgMs = new ArrayList<>();
         List<Double> runMedianMs = new ArrayList<>();
         List<Double> runP90Ms = new ArrayList<>();
         List<Double> runP95Ms = new ArrayList<>();
         List<Double> runMaxMs = new ArrayList<>();
         List<Double> runThroughput = new ArrayList<>();
-        List<Long> allDurationsNs = new ArrayList<>(); // aggregated raw durations across all runs
+        List<Long> allDurationsNs = new ArrayList<>();
+
+        AtomicInteger globalProgress = new AtomicInteger(0);
+        int totalRequests = RUNS * ITERATIONS;
 
         for (int run = 1; run <= RUNS; run++) {
-            System.out.printf("=== RUN %d/%d ===%n", run, RUNS);
+            // System.out.printf("%n=== RUN %d/%d ===%n", run, RUNS);
 
-            // run single batch
-            RunResult result = runSingleBatch(ITERATIONS, THREAD_COUNT);
+            // Запуск одного прогона
+            RunResult result = runSingleBatch(ITERATIONS, THREAD_COUNT, run, globalProgress, totalRequests);
 
-            // print per-run summary (milliseconds)
-            System.out.println();
-            System.out.printf("Run %d summary:%n", run);
-            System.out.printf("Submitted: %d, Success: %d, Failures: %d%n",
-                    result.submitted, result.successes, result.failures);
-            System.out.printf("Wall time (submit->all-complete): %.3f s, Throughput: %.2f req/s%n",
-                    result.wallSec, result.throughput);
-
-            printStatsMs(result.durationsNs);
-
-            // collect metrics for averaging
+            // Сбор метрик для усреднения
             runAvgMs.add(nanosToMillisDouble(avg(result.durationsNs)));
             runMedianMs.add(nanosToMillisDouble(median(result.sortedDurationsNs)));
             runP90Ms.add(nanosToMillisDouble(percentile(result.sortedDurationsNs, 90)));
@@ -600,92 +72,134 @@ public class Main {
             runMaxMs.add(nanosToMillisDouble(Collections.max(result.sortedDurationsNs)));
             runThroughput.add(result.throughput);
 
-            // aggregate raw durations
             allDurationsNs.addAll(result.durationsNs);
 
-            // short pause between runs to stabilize network (optional)
-            Thread.sleep(500);
+            Thread.sleep(500); // короткая пауза между прогонами
         }
 
-        // After all runs: compute means of per-run metrics and aggregated statistics
-        System.out.println();
-        System.out.println("=== MULTI-RUN SUMMARY ===");
-        System.out.printf("Runs: %d, Iterations/run: %d, Total requests attempted: %d%n",
-                RUNS, ITERATIONS, RUNS * ITERATIONS);
+        System.out.println(); // перенос строки после прогресс-бара
 
-        // mean of per-run metrics
-        System.out.printf("Mean of per-run averages: %s ms%n", formatDouble(mean(runAvgMs)));
-        System.out.printf("Mean of per-run medians: %s ms%n", formatDouble(mean(runMedianMs)));
-        System.out.printf("Mean of per-run p90: %s ms%n", formatDouble(mean(runP90Ms)));
-        System.out.printf("Mean of per-run p95: %s ms%n", formatDouble(mean(runP95Ms)));
-        System.out.printf("Mean of per-run max: %s ms%n", formatDouble(mean(runMaxMs)));
-        System.out.printf("Mean throughput (req/s) across runs: %s req/s%n", formatDouble(mean(runThroughput)));
+        // ----- MULTI-RUN SUMMARY -----
+        System.out.println("\n=== MULTI-RUN SUMMARY ===");
+        System.out.printf("Average per run: %s ms%n", formatDouble(mean(runAvgMs)));
+        System.out.printf("Median per run: %s ms%n", formatDouble(mean(runMedianMs)));
+        System.out.printf("p90 per run: %s ms%n", formatDouble(mean(runP90Ms)));
+        System.out.printf("p95 per run: %s ms%n", formatDouble(mean(runP95Ms)));
+        System.out.printf("Max per run: %s ms%n", formatDouble(mean(runMaxMs)));
+        System.out.printf("Average throughput: %s req/s%n", formatDouble(mean(runThroughput)));
 
-        // aggregated stats across all successful requests
-        System.out.println();
-        System.out.println("Aggregated statistics across all successful requests (all runs combined):");
+        // ----- Агрегированные статистики всех успешных запросов -----
+        System.out.println("\n=== Aggregated statistics ===");
         if (!allDurationsNs.isEmpty()) {
             printStatsMs(allDurationsNs);
         } else {
-            System.out.println("No successful requests collected.");
+            System.out.println("No successful requests to analyze.");
         }
 
-        System.out.println("Done.");
+        long scriptEnd = System.nanoTime();
+        double scriptSec = (scriptEnd - scriptStart) / 1_000_000_000.0;
+        String GREEN = "\u001B[32m";
+        String RESET = "\u001B[0m";
+        System.out.println(GREEN + "Done. Total runtime: " + formatDouble(scriptSec) + " s" + RESET);
     }
 
-    /** Perform a single run: submit N tasks on THREADS and collect per-request roundtrip durations */
-    private static RunResult runSingleBatch(int iterations, int threads) throws InterruptedException {
+    // ----- Генерация JSON -----
+    private static String generateFleasBlock() {
+        return """
+        {
+            "n": 4,
+            "m": 4,
+            "feederRow": 0,
+            "feederCol": 0,
+            "fleasCount": 16,
+            "fleas": [
+              {"row":0,"col":0},{"row":0,"col":1},{"row":0,"col":2},{"row":0,"col":3},
+              {"row":1,"col":0},{"row":1,"col":1},{"row":1,"col":2},{"row":1,"col":3},
+              {"row":2,"col":0},{"row":2,"col":1},{"row":2,"col":2},{"row":2,"col":3},
+              {"row":3,"col":0},{"row":3,"col":1},{"row":3,"col":2},{"row":3,"col":3}
+            ]
+        }
+        """;
+    }
+
+    private static String generateRequestJson(int blockCount) {
+        StringBuilder sb = new StringBuilder("[\n");
+        for (int i = 0; i < blockCount; i++) {
+            sb.append(generateFleasBlock());
+            if (i < blockCount - 1) sb.append(",\n");
+        }
+        sb.append("\n]");
+        return sb.toString();
+    }
+
+    // ----- Выполнение одного прогона -----
+    private static RunResult runSingleBatch(int iterations, int threads, int run, AtomicInteger globalProgress, int totalRequests) throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(threads);
         CompletionService<Long> completion = new ExecutorCompletionService<>(executor);
         AtomicInteger failures = new AtomicInteger(0);
         List<Long> durationsNs = Collections.synchronizedList(new ArrayList<>(iterations));
 
         long submitStart = System.nanoTime();
+
         for (int i = 0; i < iterations; i++) {
-            final int idx = i + 1;
             completion.submit(() -> {
                 try {
-                    long duration = singlePostRoundtrip(SENDER_URL, REQUEST_JSON);
+                    long duration = singlePostRoundtrip(SENDER_URL + PROTOCOL, REQUEST_JSON);
                     durationsNs.add(duration);
-                    System.out.printf("  #%d completed: %.3f ms (thread=%s)%n", idx, nanosToMillis(duration), Thread.currentThread().getName());
+                    int currentGlobal = globalProgress.incrementAndGet();
+                    printProgress(currentGlobal, totalRequests);
                     return duration;
                 } catch (Exception e) {
                     failures.incrementAndGet();
-                    System.err.printf("  #%d failed: %s%n", idx, e.toString());
+                    globalProgress.incrementAndGet();
                     return -1L;
                 }
             });
         }
 
-        // wait for completions
-        int received = 0;
+        // Ожидание завершения всех задач
         for (int i = 0; i < iterations; i++) {
             try {
                 Future<Long> f = completion.take();
-                Long v = f.get(); // task catches exceptions and increments failures
-                received++;
+                f.get();
             } catch (ExecutionException ee) {
                 failures.incrementAndGet();
-                System.err.println("Task exception: " + ee.getMessage());
             }
         }
         long submitEnd = System.nanoTime();
         executor.shutdown();
 
-        // compute throughput for this run: successes / wall time
         int successes = durationsNs.size();
-        long wallNs = submitEnd - submitStart;
-        double wallSec = wallNs / 1_000_000_000.0;
+        double wallSec = (submitEnd - submitStart) / 1_000_000_000.0;
         double throughput = wallSec > 0 ? successes / wallSec : 0.0;
 
-        // sort copy for percentiles
         List<Long> sorted = new ArrayList<>(durationsNs);
         Collections.sort(sorted);
+
+        // System.out.println(); // перенос строки после прогресс-бара - убрано
 
         return new RunResult(iterations, successes, failures.get(), durationsNs, sorted, wallSec, throughput);
     }
 
-    /** Perform a single POST and return round-trip duration in ns */
+    // ----- Прогресс-бар -----
+    private static void printProgress(int current, int total) {
+        int width = 30; // ширина шкалы
+        int done = (int)((current / (double)total) * width);
+        int remaining = width - done;
+        StringBuilder bar = new StringBuilder("[");
+        bar.append("█".repeat(done));
+        bar.append(".".repeat(Math.max(0, remaining)));
+        bar.append("] ");
+        bar.append(current).append("/").append(total);
+        // обновляем строку на месте
+        System.out.print("\r" + bar);
+        // только в конце делаем перевод строки
+        if (current == total) {
+            System.out.println();
+        }
+    }
+
+    // ----- HTTP POST -----
     private static long singlePostRoundtrip(String targetUrl, String json) throws Exception {
         URL url = new URL(targetUrl);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -697,7 +211,7 @@ public class Main {
 
         byte[] payload = json.getBytes(StandardCharsets.UTF_8);
 
-        long sendStart = System.nanoTime();
+        long start = System.nanoTime();
         try (OutputStream os = conn.getOutputStream()) {
             os.write(payload);
             os.flush();
@@ -709,13 +223,10 @@ public class Main {
             throw new RuntimeException("HTTP " + code + (err == null ? "" : " : " + err));
         }
 
-        // read full response
-        String response = readStream(conn.getInputStream());
-        long recvTime = System.nanoTime();
+        readStream(conn.getInputStream());
+        long end = System.nanoTime();
         conn.disconnect();
-
-        // response can be validated/ignored
-        return recvTime - sendStart;
+        return end - start;
     }
 
     private static String readStream(InputStream in) {
@@ -730,15 +241,12 @@ public class Main {
         }
     }
 
-    /* ----- statistics helpers ----- */
-
+    // ----- Статистика -----
     private static void printStatsMs(List<Long> durationsNs) {
         List<Long> copy = new ArrayList<>(durationsNs);
         Collections.sort(copy);
         int n = copy.size();
-        double sumNs = 0;
-        for (Long v : copy) sumNs += v;
-        double avgNs = n > 0 ? sumNs / n : 0;
+        double avgNs = avg(copy);
         long minNs = n > 0 ? copy.get(0) : 0;
         long maxNs = n > 0 ? copy.get(n - 1) : 0;
         double medianNs = median(copy);
@@ -748,7 +256,6 @@ public class Main {
 
         DecimalFormat df = new DecimalFormat("#,##0.000");
 
-        System.out.println();
         System.out.println("Per-request round-trip (milliseconds):");
         System.out.printf("count: %d%n", n);
         System.out.printf("min: %s ms%n", df.format(nanosToMillis(minNs)));
@@ -757,7 +264,7 @@ public class Main {
         System.out.printf("p90: %s ms%n", df.format(nanosToMillisDouble(p90Ns)));
         System.out.printf("p95: %s ms%n", df.format(nanosToMillisDouble(p95Ns)));
         System.out.printf("max: %s ms%n", df.format(nanosToMillis(maxNs)));
-        System.out.printf("stddev: %s ms%n", df.format(stddevMs));
+        System.out.printf("stddev: %s ms%n\n", df.format(stddevMs));
     }
 
     private static long percentile(List<Long> sorted, double p) {
@@ -788,18 +295,12 @@ public class Main {
     private static double stddev(List<Long> values) {
         int n = values.size();
         if (n <= 1) return 0.0;
-        double mean = 0;
-        for (Long v : values) mean += v;
-        mean /= n;
+        double mean = avg(values);
         double sumsq = 0;
-        for (Long v : values) {
-            double d = v - mean;
-            sumsq += d * d;
-        }
+        for (Long v : values) sumsq += (v - mean) * (v - mean);
         return Math.sqrt(sumsq / (n - 1));
     }
 
-    /* Convert nanoseconds to milliseconds - overloads for long and double */
     private static double nanosToMillis(long ns) {
         return ns / 1_000_000.0;
     }
@@ -814,12 +315,25 @@ public class Main {
 
     private static double mean(List<Double> vals) {
         if (vals.isEmpty()) return 0.0;
-        double s = 0;
-        for (Double d : vals) s += d;
-        return s / vals.size();
+        double sum = 0;
+        for (Double d : vals) sum += d;
+        return sum / vals.size();
     }
 
-    /** Simple data holder for a run */
+    // ----- Вывод конфигурации -----
+    private static void printConfig() {
+        System.out.println("\n\n=== CONFIGURATION ===");
+        System.out.println("Protocol: " + PROTOCOL);
+        System.out.println("Runs: " + RUNS);
+        System.out.println("Requests/run: " + ITERATIONS);
+        System.out.println("Total requests: " + (RUNS * ITERATIONS));
+        System.out.println("Threads: " + THREAD_COUNT);
+        System.out.println("Connect timeout: " + CONNECT_TIMEOUT_MS + " ms");
+        System.out.println("Read timeout: " + READ_TIMEOUT_MS + " ms");
+        System.out.println("Request blocks: " + REQUEST_BLOCK_COUNT + "\n\n");
+    }
+
+    // ----- Класс для хранения результата прогона -----
     private static class RunResult {
         final int submitted;
         final int successes;
@@ -829,7 +343,8 @@ public class Main {
         final double wallSec;
         final double throughput;
 
-        RunResult(int submitted, int successes, int failures, List<Long> durationsNs, List<Long> sortedDurationsNs, double wallSec, double throughput) {
+        RunResult(int submitted, int successes, int failures, List<Long> durationsNs,
+                  List<Long> sortedDurationsNs, double wallSec, double throughput) {
             this.submitted = submitted;
             this.successes = successes;
             this.failures = failures;
