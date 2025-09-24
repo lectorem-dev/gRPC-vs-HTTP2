@@ -5,3 +5,5 @@ include 'libs', 'receiver', 'sender'
 project(':libs').projectDir = file('service/libs')
 project(':receiver').projectDir = file('service/receiver')
 project(':sender').projectDir = file('service/sender')
+include 'ProtocolTester'
+
