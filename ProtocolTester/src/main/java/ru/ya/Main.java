@@ -26,14 +26,14 @@ public class Main {
 
     // ----- НАСТРОЙКИ -----
     private static final String PROTOCOL = "grpc";       // grpc или http
-    private static final int RUNS = 2;                 // количество полных прогонов
-    private static final int ITERATIONS = 20;           // запросов на прогон
-    private static final int THREAD_COUNT = 5;          // потоков на прогон
+    private static final int RUNS = 500;                 // количество полных прогонов
+    private static final int ITERATIONS = 500;           // запросов на прогон
+    private static final int THREAD_COUNT = 50;          // потоков на прогон
     private static final int CONNECT_TIMEOUT_MS = 15_000;
     private static final int READ_TIMEOUT_MS = 60_000;
 
     // Настройка генерации JSON
-    private static final int REQUEST_BLOCK_COUNT = 2;   // сколько блоков "блох" в массиве
+    private static final int REQUEST_BLOCK_COUNT = 50;   // сколько блоков "блох" в массиве
 
     private static final String REQUEST_JSON = generateRequestJson(REQUEST_BLOCK_COUNT);
 
